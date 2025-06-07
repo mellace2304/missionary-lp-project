@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Missionary Allocation Map - Complete</title>
+
+    <script src="ammap.js"></script>
+    <script src="indiaDistrictsLowStates.js"></script>
+
+    <style>
+        #mapdiv {
+            width: 80%;
+            height: 600px;
+            float: left;
+        }
+        #legend {
+            width: 18%;
+            margin-left: 2%;
+            float: left;
+            height: 600px;
+            background: linear-gradient(to bottom, rgb(255, 220, 220) 0%, rgb(255, 0, 0) 100%);
+            border: 1px solid #aaa;
+            position: relative;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+        #legend .label-top {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-weight: bold;
+            color: #660000;
+        }
+        #legend .label-bottom {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            font-weight: bold;
+            color: #660000;
+        }
+        #searchDiv {
+            margin-bottom: 10px;
+            clear: both;
+        }
+        #unaccountedSection {
+            clear: both;
+            margin-top: 20px;
+            padding: 10px;
+        }
+        #unaccountedTableContainer {
+            height: 300px;
+            overflow-y: scroll;
+            border: 1px solid #aaa;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid #aaa;
+            padding: 5px;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="searchDiv">
+        <input type="text" id="searchBox" placeholder="Enter District ID (e.g., IN-TN-CH)">
+        <button onclick="searchDistrict()">Search</button>
+    </div>
+
+    <div id="mapdiv"></div>
+    <div id="legend">
+        <div class="label-top">Fewer Missionaries</div>
+        <div class="label-bottom">More Missionaries</div>
+    </div>
+
+    <!-- 📥 Copy the missionaryData output here -->
+    <script>
+    // ===== missionaryData from Python script =====
+    
+    /* Paste your missionaryData object here */
+		var missionaryData = {
+			"IN-AN-SA": { state: "Andaman and Nicobar Islands", district: "Andaman South", missionaries: 3 },
+			"IN-AN-NI": { state: "Andaman and Nicobar Islands", district: "Nicobar", missionaries: 1 },
+			"IN-AN-NA": { state: "Andaman and Nicobar Islands", district: "North and Middle Andaman", missionaries: 2 },
+			"IN-AP-AN": { state: "Andhra Pradesh", district: "Anantapur", missionaries: 23 },
+			"IN-AP-EG": { state: "Andhra Pradesh", district: "Godavari East", missionaries: 30 },
+			"IN-AP-WG": { state: "Andhra Pradesh", district: "Godavari West", missionaries: 14 },
+			"IN-AP-CU": { state: "Andhra Pradesh", district: "Kadapa", missionaries: 34 },
+			"IN-AP-PR": { state: "Andhra Pradesh", district: "Prakasam", missionaries: 30 },
+			"IN-AP-NE": { state: "Andhra Pradesh", district: "Sri Potti Sriramulu Nellore", missionaries: 19 },
+			"IN-AP-SR": { state: "Andhra Pradesh", district: "Srikakulam", missionaries: 34 },
+			"IN-AP-VS": { state: "Andhra Pradesh", district: "Visakhapatnam", missionaries: 46 },
+			"IN-AP-VZ": { state: "Andhra Pradesh", district: "Vizianagaram", missionaries: 34 },
+			"IN-AR-AJ": { state: "Arunachal Pradesh", district: "Anjaw", missionaries: 1 },
+			"IN-AR-CH": { state: "Arunachal Pradesh", district: "Changlang", missionaries: 2 },
+			"IN-AR-WK": { state: "Arunachal Pradesh", district: "Kameng West", missionaries: 1 },
+			"IN-AR-EL": { state: "Arunachal Pradesh", district: "Lohit", missionaries: 3 },
+			"IN-AR-DV": { state: "Arunachal Pradesh", district: "Lower Dibang Valley", missionaries: 1 },
+			"IN-AR-TA": { state: "Arunachal Pradesh", district: "Tawang", missionaries: 1 },
+			"IN-AR-US": { state: "Arunachal Pradesh", district: "Upper Siang", missionaries: 1 },
+			"IN-AS-BA": { state: "Assam", district: "Barpeta", missionaries: 10 },
+			"IN-AS-BI": { state: "Assam", district: "Biswanath", missionaries: 18 },
+			"IN-AS-BO": { state: "Assam", district: "Bongaigaon", missionaries: 18 },
+			"IN-AS-CA": { state: "Assam", district: "Cachar", missionaries: 23 },
+			"IN-AS-CD": { state: "Assam", district: "Charaideo", missionaries: 6 },
+			"IN-AS-DM": { state: "Assam", district: "Dhemaji", missionaries: 5 },
+			"IN-AS-DB": { state: "Assam", district: "Dhubri", missionaries: 32 },
+			"IN-AS-DI": { state: "Assam", district: "Dibrugarh", missionaries: 17 },
+			"IN-AS-NC": { state: "Assam", district: "Dima Hasao", missionaries: 1 },
+			"IN-AS-GP": { state: "Assam", district: "Goalpara", missionaries: 3 },
+			"IN-AS-GG": { state: "Assam", district: "Golaghat", missionaries: 12 },
+			"IN-AS-HA": { state: "Assam", district: "Hailakandi", missionaries: 15 },
+			"IN-AS-HO": { state: "Assam", district: "Hojai", missionaries: 19 },
+			"IN-AS-JO": { state: "Assam", district: "Jorhat", missionaries: 12 },
+			"IN-AS-KU": { state: "Assam", district: "Kamrup", missionaries: 22 },
+			"IN-AS-KM": { state: "Assam", district: "Kamrup Metropolitan", missionaries: 31 },
+			"IN-AS-KA": { state: "Assam", district: "Karbi Anglong", missionaries: 7 },
+			"IN-AS-WK": { state: "Assam", district: "Karbi Anglong West", missionaries: 6 },
+			"IN-AS-LA": { state: "Assam", district: "Lakhimpur", missionaries: 13 },
+			"IN-AS-MA": { state: "Assam", district: "Morigaon", missionaries: 8 },
+			"IN-AS-NG": { state: "Assam", district: "Nagaon", missionaries: 26 },
+			"IN-AS-NL": { state: "Assam", district: "Nalbari", missionaries: 1 },
+			"IN-AS-TI": { state: "Assam", district: "Tinsukia", missionaries: 13 },
+			"IN-BR-AR": { state: "Bihar", district: "Araria", missionaries: 38 },
+			"IN-BR-AW": { state: "Bihar", district: "Arwal", missionaries: 19 },
+			"IN-BR-AU": { state: "Bihar", district: "Aurangabad", missionaries: 39 },
+			"IN-BR-BA": { state: "Bihar", district: "Banka", missionaries: 27 },
+			"IN-BR-BE": { state: "Bihar", district: "Begusarai", missionaries: 36 },
+			"IN-BR-BG": { state: "Bihar", district: "Bhagalpur", missionaries: 38 },
+			"IN-BR-BJ": { state: "Bihar", district: "Bhojpur", missionaries: 26 },
+			"IN-BR-DA": { state: "Bihar", district: "Darbhanga", missionaries: 60 },
+			"IN-BR-GA": { state: "Bihar", district: "Gaya", missionaries: 37 },
+			"IN-BR-GO": { state: "Bihar", district: "Gopalganj", missionaries: 37 },
+			"IN-BR-JA": { state: "Bihar", district: "Jamui", missionaries: 60 },
+			"IN-BR-KM": { state: "Bihar", district: "Kaimur", missionaries: 2 },
+			"IN-BR-KT": { state: "Bihar", district: "Katihar", missionaries: 33 },
+			"IN-BR-KI": { state: "Bihar", district: "Kishanganj", missionaries: 5 },
+			"IN-BR-MP": { state: "Bihar", district: "Madhepura", missionaries: 16 },
+			"IN-BR-MB": { state: "Bihar", district: "Madhubani", missionaries: 44 },
+			"IN-BR-MZ": { state: "Bihar", district: "Muzaffarpur", missionaries: 136 },
+			"IN-BR-NL": { state: "Bihar", district: "Nalanda", missionaries: 41 },
+			"IN-BR-NW": { state: "Bihar", district: "Nawada", missionaries: 34 },
+			"IN-BR-WC": { state: "Bihar", district: "Pashchim Champaran", missionaries: 28 },
+			"IN-BR-PA": { state: "Bihar", district: "Patna", missionaries: 71 },
+			"IN-BR-EC": { state: "Bihar", district: "Purba Champaran", missionaries: 84 },
+			"IN-BR-PU": { state: "Bihar", district: "Purnia", missionaries: 48 },
+			"IN-BR-RO": { state: "Bihar", district: "Rohtas", missionaries: 67 },
+			"IN-BR-SM": { state: "Bihar", district: "Samastipur", missionaries: 65 },
+			"IN-BR-SR": { state: "Bihar", district: "Saran", missionaries: 51 },
+			"IN-BR-ST": { state: "Bihar", district: "Sitamarhi", missionaries: 22 },
+			"IN-BR-SW": { state: "Bihar", district: "Siwan", missionaries: 31 },
+			"IN-BR-SU": { state: "Bihar", district: "Supaul", missionaries: 67 },
+			"IN-CH-CH": { state: "Chandigarh", district: "Chandigarh", missionaries: 14 },
+			"IN-CT-BA": { state: "Chhattisgarh", district: "Bastar", missionaries: 15 },
+			"IN-CT-BE": { state: "Chhattisgarh", district: "Bemetara", missionaries: 37 },
+			"IN-CT-BJ": { state: "Chhattisgarh", district: "Bijapur", missionaries: 13 },
+			"IN-CT-DH": { state: "Chhattisgarh", district: "Dhamtari", missionaries: 6 },
+			"IN-CT-GA": { state: "Chhattisgarh", district: "Gariaband", missionaries: 14 },
+			"IN-CT-JC": { state: "Chhattisgarh", district: "Janjgir-Champa", missionaries: 33 },
+			"IN-CT-JA": { state: "Chhattisgarh", district: "Jashpur", missionaries: 3 },
+			"IN-CT-KK": { state: "Chhattisgarh", district: "Kanker", missionaries: 18 },
+			"IN-CT-KB": { state: "Chhattisgarh", district: "Korba", missionaries: 14 },
+			"IN-CT-MA": { state: "Chhattisgarh", district: "Mahasamund", missionaries: 13 },
+			"IN-CT-MU": { state: "Chhattisgarh", district: "Mungeli", missionaries: 35 },
+			"IN-CT-NR": { state: "Chhattisgarh", district: "Narayanpur", missionaries: 6 },
+			"IN-CT-RG": { state: "Chhattisgarh", district: "Raigarh", missionaries: 23 },
+			"IN-CT-RP": { state: "Chhattisgarh", district: "Raipur", missionaries: 37 },
+			"IN-CT-SU": { state: "Chhattisgarh", district: "Surajpur", missionaries: 25 },
+			"IN-CT-SJ": { state: "Chhattisgarh", district: "Surguja", missionaries: 6 },
+			"IN-DD-DA": { state: "Daman and Diu", district: "Diu", missionaries: 1 },
+			"IN-DL-CD": { state: "Delhi", district: "Delhi Central", missionaries: 18 },
+			"IN-DL-ED": { state: "Delhi", district: "Delhi East", missionaries: 36 },
+			"IN-DL-ND": { state: "Delhi", district: "Delhi New", missionaries: 8 },
+			"IN-DL-SD": { state: "Delhi", district: "Delhi South", missionaries: 14 },
+			"IN-DL-SE": { state: "Delhi", district: "Delhi South East", missionaries: 40 },
+			"IN-DL-SW": { state: "Delhi", district: "Delhi Southwest", missionaries: 44 },
+			"IN-DL-WD": { state: "Delhi", district: "Delhi West", missionaries: 35 },
+			"IN-DL-SH": { state: "Delhi", district: "Shahdara", missionaries: 17 },
+			"IN-GA-NG": { state: "Goa", district: "Goa North", missionaries: 10 },
+			"IN-GA-SG": { state: "Goa", district: "Goa South", missionaries: 8 },
+			"IN-GJ-AH": { state: "Gujarat", district: "Ahmedabad", missionaries: 80 },
+			"IN-GJ-AM": { state: "Gujarat", district: "Amreli", missionaries: 21 },
+			"IN-GJ-AN": { state: "Gujarat", district: "Anand", missionaries: 30 },
+			"IN-GJ-AR": { state: "Gujarat", district: "Aravalli", missionaries: 12 },
+			"IN-GJ-BK": { state: "Gujarat", district: "Banaskantha", missionaries: 36 },
+			"IN-GJ-BR": { state: "Gujarat", district: "Bharuch", missionaries: 20 },
+			"IN-GJ-BV": { state: "Gujarat", district: "Bhavnagar", missionaries: 34 },
+			"IN-GJ-BO": { state: "Gujarat", district: "Botad", missionaries: 6 },
+			"IN-GJ-DA": { state: "Gujarat", district: "Dahod", missionaries: 25 },
+			"IN-GJ-DD": { state: "Gujarat", district: "Devbhoomi Dwarka", missionaries: 31 },
+			"IN-GJ-GA": { state: "Gujarat", district: "Gandhinagar", missionaries: 19 },
+			"IN-GJ-GS": { state: "Gujarat", district: "Gir Somnath", missionaries: 13 },
+			"IN-GJ-JU": { state: "Gujarat", district: "Junagadh", missionaries: 25 },
+			"IN-GJ-KH": { state: "Gujarat", district: "Kheda", missionaries: 19 },
+			"IN-GJ-KA": { state: "Gujarat", district: "Kutch", missionaries: 28 },
+			"IN-GJ-MA": { state: "Gujarat", district: "Mehsana", missionaries: 36 },
+			"IN-GJ-MO": { state: "Gujarat", district: "Morbi", missionaries: 16 },
+			"IN-GJ-NR": { state: "Gujarat", district: "Narmada", missionaries: 9 },
+			"IN-GJ-NV": { state: "Gujarat", district: "Navsari", missionaries: 16 },
+			"IN-GJ-PM": { state: "Gujarat", district: "Panchmahal", missionaries: 29 },
+			"IN-GJ-PA": { state: "Gujarat", district: "Patan", missionaries: 13 },
+			"IN-GJ-RA": { state: "Gujarat", district: "Rajkot", missionaries: 28 },
+			"IN-GJ-SK": { state: "Gujarat", district: "Sabarkantha", missionaries: 15 },
+			"IN-GJ-ST": { state: "Gujarat", district: "Surat", missionaries: 71 },
+			"IN-GJ-SN": { state: "Gujarat", district: "Surendranagar", missionaries: 23 },
+			"IN-GJ-TA": { state: "Gujarat", district: "Tapi", missionaries: 7 },
+			"IN-GJ-VD": { state: "Gujarat", district: "Vadodara", missionaries: 60 },
+			"IN-GJ-VL": { state: "Gujarat", district: "Valsad", missionaries: 24 },
+			"IN-HR-AM": { state: "Haryana", district: "Ambala", missionaries: 11 },
+			"IN-HR-BH": { state: "Haryana", district: "Bhiwani", missionaries: 1 },
+			"IN-HR-FR": { state: "Haryana", district: "Faridabad", missionaries: 17 },
+			"IN-HR-FT": { state: "Haryana", district: "Fatehabad", missionaries: 11 },
+			"IN-HR-GU": { state: "Haryana", district: "Gurgaon", missionaries: 18 },
+			"IN-HR-HI": { state: "Haryana", district: "Hissar", missionaries: 18 },
+			"IN-HR-JH": { state: "Haryana", district: "Jhajjar", missionaries: 3 },
+			"IN-HR-JI": { state: "Haryana", district: "Jind", missionaries: 15 },
+			"IN-HR-KT": { state: "Haryana", district: "Kaithal", missionaries: 12 },
+			"IN-HR-KR": { state: "Haryana", district: "Karnal", missionaries: 20 },
+			"IN-HR-KU": { state: "Haryana", district: "Kurukshetra", missionaries: 11 },
+			"IN-HR-MA": { state: "Haryana", district: "Mahendragarh", missionaries: 2 },
+			"IN-HR-MW": { state: "Haryana", district: "Mewat", missionaries: 12 },
+			"IN-HR-PW": { state: "Haryana", district: "Palwal", missionaries: 17 },
+			"IN-HR-PK": { state: "Haryana", district: "Panchkula", missionaries: 12 },
+			"IN-HR-PP": { state: "Haryana", district: "Panipat", missionaries: 15 },
+			"IN-HR-RE": { state: "Haryana", district: "Rewari", missionaries: 24 },
+			"IN-HR-RO": { state: "Haryana", district: "Rohtak", missionaries: 16 },
+			"IN-HR-SI": { state: "Haryana", district: "Sirsa", missionaries: 23 },
+			"IN-HR-SNP": { state: "Haryana", district: "Sonipat", missionaries: 24 },
+			"IN-HR-YN": { state: "Haryana", district: "Yamuna Nagar", missionaries: 15 },
+			"IN-HP-BI": { state: "Himachal Pradesh", district: "Bilaspur", missionaries: 6 },
+			"IN-HP-CH": { state: "Himachal Pradesh", district: "Chamba", missionaries: 6 },
+			"IN-HP-HA": { state: "Himachal Pradesh", district: "Hamirpur", missionaries: 7 },
+			"IN-HP-KA": { state: "Himachal Pradesh", district: "Kangra", missionaries: 18 },
+			"IN-HP-KI": { state: "Himachal Pradesh", district: "Kinnaur", missionaries: 1 },
+			"IN-HP-KU": { state: "Himachal Pradesh", district: "Kullu", missionaries: 6 },
+			"IN-HP-LS": { state: "Himachal Pradesh", district: "Lahaul and Spiti", missionaries: 1 },
+			"IN-HP-MA": { state: "Himachal Pradesh", district: "Mandi", missionaries: 12 },
+			"IN-HP-SH": { state: "Himachal Pradesh", district: "Shimla", missionaries: 9 },
+			"IN-HP-SI": { state: "Himachal Pradesh", district: "Sirmaur", missionaries: 11 },
+			"IN-HP-SO": { state: "Himachal Pradesh", district: "Solan", missionaries: 5 },
+			"IN-HP-UNA": { state: "Himachal Pradesh", district: "Una", missionaries: 5 },
+			"IN-JK-AN": { state: "Jammu and Kashmir", district: "Anantnag", missionaries: 15 },
+			"IN-JK-BD": { state: "Jammu and Kashmir", district: "Badgam", missionaries: 10 },
+			"IN-JK-BPR": { state: "Jammu and Kashmir", district: "Bandipora", missionaries: 4 },
+			"IN-JK-BR": { state: "Jammu and Kashmir", district: "Baramulla", missionaries: 13 },
+			"IN-JK-DO": { state: "Jammu and Kashmir", district: "Doda", missionaries: 5 },
+			"IN-JK-GB": { state: "Jammu and Kashmir", district: "Ganderbal", missionaries: 2 },
+			"IN-JK-JA": { state: "Jammu and Kashmir", district: "Jammu", missionaries: 20 },
+			"IN-JK-KT": { state: "Jammu and Kashmir", district: "Kathua", missionaries: 8 },
+			"IN-JK-KW": { state: "Jammu and Kashmir", district: "Kishtwar", missionaries: 1 },
+			"IN-JK-KG": { state: "Jammu and Kashmir", district: "Kulgam", missionaries: 2 },
+			"IN-JK-KU": { state: "Jammu and Kashmir", district: "Kupwara", missionaries: 7 },
+			"IN-JK-PO": { state: "Jammu and Kashmir", district: "Poonch", missionaries: 7 },
+			"IN-JK-PU": { state: "Jammu and Kashmir", district: "Pulwama", missionaries: 5 },
+			"IN-JK-RA": { state: "Jammu and Kashmir", district: "Rajouri", missionaries: 8 },
+			"IN-JK-RB": { state: "Jammu and Kashmir", district: "Ramban", missionaries: 6 },
+			"IN-JK-RS": { state: "Jammu and Kashmir", district: "Reasi", missionaries: 5 },
+			"IN-JK-SB": { state: "Jammu and Kashmir", district: "Samba", missionaries: 4 },
+			"IN-JK-SR": { state: "Jammu and Kashmir", district: "Srinagar", missionaries: 18 },
+			"IN-JK-UD": { state: "Jammu and Kashmir", district: "Udhampur", missionaries: 7 },
+			"IN-JH-CH": { state: "Jharkhand", district: "Chatra", missionaries: 17 },
+			"IN-JH-DE": { state: "Jharkhand", district: "Deoghar", missionaries: 21 },
+			"IN-JH-DH": { state: "Jharkhand", district: "Dhanbad", missionaries: 24 },
+			"IN-JH-GA": { state: "Jharkhand", district: "Garhwa", missionaries: 14 },
+			"IN-JH-GI": { state: "Jharkhand", district: "Giridih", missionaries: 22 },
+			"IN-JH-GO": { state: "Jharkhand", district: "Godda", missionaries: 16 },
+			"IN-JH-JA": { state: "Jharkhand", district: "Jamtara", missionaries: 13 },
+			"IN-JH-KO": { state: "Jharkhand", district: "Koderma", missionaries: 55 },
+			"IN-JH-LA": { state: "Jharkhand", district: "Latehar", missionaries: 12 },
+			"IN-JH-PL": { state: "Jharkhand", district: "Palamu", missionaries: 25 },
+			"IN-JH-RM": { state: "Jharkhand", district: "Ramgarh", missionaries: 17 },
+			"IN-JH-RA": { state: "Jharkhand", district: "Ranchi", missionaries: 33 },
+			"IN-JH-SA": { state: "Jharkhand", district: "Sahibganj", missionaries: 29 },
+			"IN-JH-SK": { state: "Jharkhand", district: "Seraikela Kharsawan", missionaries: 3 },
+			"IN-JH-SI": { state: "Jharkhand", district: "Simdega", missionaries: 3 },
+			"IN-JH-ES": { state: "Jharkhand", district: "Singhbhum East", missionaries: 43 },
+			"IN-JH-WS": { state: "Jharkhand", district: "Singhbhum West", missionaries: 13 },
+			"IN-KA-BK": { state: "Karnataka", district: "Bagalkot", missionaries: 22 },
+			"IN-KA-BR": { state: "Karnataka", district: "Bangalore Rural", missionaries: 10 },
+			"IN-KA-BN": { state: "Karnataka", district: "Bangalore Urban", missionaries: 110 },
+			"IN-KA-BG": { state: "Karnataka", district: "Belgaum", missionaries: 54 },
+			"IN-KA-BD": { state: "Karnataka", district: "Bidar", missionaries: 17 },
+			"IN-KA-CJ": { state: "Karnataka", district: "Chamarajnagar", missionaries: 12 },
+			"IN-KA-CB": { state: "Karnataka", district: "Chikkaballapur", missionaries: 15 },
+			"IN-KA-CK": { state: "Karnataka", district: "Chikkamagaluru", missionaries: 14 },
+			"IN-KA-CT": { state: "Karnataka", district: "Chitradurga", missionaries: 18 },
+			"IN-KA-DK": { state: "Karnataka", district: "Dakshina Kannada", missionaries: 25 },
+			"IN-KA-DA": { state: "Karnataka", district: "Davanagere", missionaries: 26 },
+			"IN-KA-DH": { state: "Karnataka", district: "Dharwad", missionaries: 21 },
+			"IN-KA-GA": { state: "Karnataka", district: "Gadag", missionaries: 13 },
+			"IN-KA-GU": { state: "Karnataka", district: "Gulbarga", missionaries: 31 },
+			"IN-KA-HS": { state: "Karnataka", district: "Hassan", missionaries: 20 },
+			"IN-KA-HV": { state: "Karnataka", district: "Haveri", missionaries: 18 },
+			"IN-KA-KD": { state: "Karnataka", district: "Kodagu", missionaries: 7 },
+			"IN-KA-KL": { state: "Karnataka", district: "Kolar", missionaries: 15 },
+			"IN-KA-KP": { state: "Karnataka", district: "Koppal", missionaries: 18 },
+			"IN-KA-MA": { state: "Karnataka", district: "Mandya", missionaries: 20 },
+			"IN-KA-MY": { state: "Karnataka", district: "Mysore", missionaries: 36 },
+			"IN-KA-RA": { state: "Karnataka", district: "Raichur", missionaries: 21 },
+			"IN-KA-RM": { state: "Karnataka", district: "Ramanagara", missionaries: 13 },
+			"IN-KA-SH": { state: "Karnataka", district: "Shimoga", missionaries: 18 },
+			"IN-KA-TU": { state: "Karnataka", district: "Tumkur", missionaries: 30 },
+			"IN-KA-UD": { state: "Karnataka", district: "Udupi", missionaries: 16 },
+			"IN-KA-UK": { state: "Karnataka", district: "Uttara Kannada", missionaries: 19 },
+			"IN-KA-BJ": { state: "Karnataka", district: "Vijayapura", missionaries: 26 },
+			"IN-KA-YG": { state: "Karnataka", district: "Yadgir", missionaries: 14 },
+			"IN-KL-AL": { state: "Kerala", district: "Alappuzha", missionaries: 24 },
+			"IN-KL-ER": { state: "Kerala", district: "Ernakulam", missionaries: 37 },
+			"IN-KL-ID": { state: "Kerala", district: "Idukki", missionaries: 12 },
+			"IN-KL-KN": { state: "Kerala", district: "Kannur", missionaries: 39 },
+			"IN-KL-KS": { state: "Kerala", district: "Kasaragod", missionaries: 15 },
+			"IN-KL-KL": { state: "Kerala", district: "Kollam", missionaries: 33 },
+			"IN-KL-KT": { state: "Kerala", district: "Kottayam", missionaries: 17 },
+			"IN-KL-KZ": { state: "Kerala", district: "Kozhikode", missionaries: 36 },
+			"IN-KL-MA": { state: "Kerala", district: "Malappuram", missionaries: 47 },
+			"IN-KL-PL": { state: "Kerala", district: "Palakkad", missionaries: 33 },
+			"IN-KL-PT": { state: "Kerala", district: "Pathanamthitta", missionaries: 20 },
+			"IN-KL-TV": { state: "Kerala", district: "Thiruvananthapuram", missionaries: 38 },
+			"IN-KL-TS": { state: "Kerala", district: "Thrissur", missionaries: 37 },
+			"IN-KL-WA": { state: "Kerala", district: "Wayanad", missionaries: 9 },
+			"IN-LD-LD": { state: "Lakshadweep", district: "Lakshadweep", missionaries: 1 },
+			"IN-MP-AL": { state: "Madhya Pradesh", district: "Alirajpur", missionaries: 22 },
+			"IN-MP-AS": { state: "Madhya Pradesh", district: "Ashok Nagar", missionaries: 14 },
+			"IN-MP-BL": { state: "Madhya Pradesh", district: "Balaghat", missionaries: 10 },
+			"IN-MP-BR": { state: "Madhya Pradesh", district: "Barwani", missionaries: 18 },
+			"IN-MP-BE": { state: "Madhya Pradesh", district: "Betul", missionaries: 21 },
+			"IN-MP-BD": { state: "Madhya Pradesh", district: "Bhind", missionaries: 21 },
+			"IN-MP-BP": { state: "Madhya Pradesh", district: "Bhopal", missionaries: 168 },
+			"IN-MP-CT": { state: "Madhya Pradesh", district: "Chhatarpur", missionaries: 21 },
+			"IN-MP-CN": { state: "Madhya Pradesh", district: "Chhindwara", missionaries: 26 },
+			"IN-MP-DM": { state: "Madhya Pradesh", district: "Damoh", missionaries: 15 },
+			"IN-MP-DE": { state: "Madhya Pradesh", district: "Dewas", missionaries: 20 },
+			"IN-MP-DH": { state: "Madhya Pradesh", district: "Dhar", missionaries: 34 },
+			"IN-MP-DI": { state: "Madhya Pradesh", district: "Dindori", missionaries: 5 },
+			"IN-MP-GW": { state: "Madhya Pradesh", district: "Gwalior", missionaries: 27 },
+			"IN-MP-HA": { state: "Madhya Pradesh", district: "Harda", missionaries: 7 },
+			"IN-MP-HO": { state: "Madhya Pradesh", district: "Hoshangabad", missionaries: 13 },
+			"IN-MP-IN": { state: "Madhya Pradesh", district: "Indore", missionaries: 80 },
+			"IN-MP-JA": { state: "Madhya Pradesh", district: "Jabalpur", missionaries: 14 },
+			"IN-MP-JH": { state: "Madhya Pradesh", district: "Jhabua", missionaries: 1 },
+			"IN-MP-KA": { state: "Madhya Pradesh", district: "Katni", missionaries: 32 },
+			"IN-MP-EN": { state: "Madhya Pradesh", district: "Khandwa (East Nimar)", missionaries: 31 },
+			"IN-MP-WN": { state: "Madhya Pradesh", district: "Khargone (West Nimar)", missionaries: 13 },
+			"IN-MP-MS": { state: "Madhya Pradesh", district: "Mandsaur", missionaries: 19 },
+			"IN-MP-MO": { state: "Madhya Pradesh", district: "Morena", missionaries: 21 },
+			"IN-MP-NA": { state: "Madhya Pradesh", district: "Narsinghpur", missionaries: 1 },
+			"IN-MP-NE": { state: "Madhya Pradesh", district: "Neemuch", missionaries: 3 },
+			"IN-MP-PA": { state: "Madhya Pradesh", district: "Panna", missionaries: 6 },
+			"IN-MP-RG": { state: "Madhya Pradesh", district: "Rajgarh", missionaries: 19 },
+			"IN-MP-RL": { state: "Madhya Pradesh", district: "Ratlam", missionaries: 17 },
+			"IN-MP-RE": { state: "Madhya Pradesh", district: "Rewa", missionaries: 24 },
+			"IN-MP-SG": { state: "Madhya Pradesh", district: "Sagar", missionaries: 29 },
+			"IN-MP-ST": { state: "Madhya Pradesh", district: "Satna", missionaries: 21 },
+			"IN-MP-SR": { state: "Madhya Pradesh", district: "Sehore", missionaries: 10 },
+			"IN-MP-SO": { state: "Madhya Pradesh", district: "Seoni", missionaries: 27 },
+			"IN-MP-SH": { state: "Madhya Pradesh", district: "Shahdol", missionaries: 19 },
+			"IN-MP-SJ": { state: "Madhya Pradesh", district: "Shajapur", missionaries: 20 },
+			"IN-MP-SP": { state: "Madhya Pradesh", district: "Sheopur", missionaries: 13 },
+			"IN-MP-SV": { state: "Madhya Pradesh", district: "Shivpuri", missionaries: 27 },
+			"IN-MP-SN": { state: "Madhya Pradesh", district: "Singrauli", missionaries: 28 },
+			"IN-MP-TI": { state: "Madhya Pradesh", district: "Tikamgarh", missionaries: 20 },
+			"IN-MP-UM": { state: "Madhya Pradesh", district: "Umaria", missionaries: 14 },
+			"IN-MP-VI": { state: "Madhya Pradesh", district: "Vidisha", missionaries: 28 },
+			"IN-MH-AH": { state: "Maharashtra", district: "Ahmednagar", missionaries: 58 },
+			"IN-MH-AK": { state: "Maharashtra", district: "Akola", missionaries: 23 },
+			"IN-MH-AM": { state: "Maharashtra", district: "Amravati", missionaries: 35 },
+			"IN-MH-AU": { state: "Maharashtra", district: "Aurangabad", missionaries: 42 },
+			"IN-MH-BI": { state: "Maharashtra", district: "Beed", missionaries: 28 },
+			"IN-MH-BH": { state: "Maharashtra", district: "Bhandara", missionaries: 17 },
+			"IN-MH-BU": { state: "Maharashtra", district: "Buldhana", missionaries: 33 },
+			"IN-MH-CH": { state: "Maharashtra", district: "Chandrapur", missionaries: 30 },
+			"IN-MH-DH": { state: "Maharashtra", district: "Dhule", missionaries: 24 },
+			"IN-MH-GA": { state: "Maharashtra", district: "Gadchiroli", missionaries: 14 },
+			"IN-MH-GO": { state: "Maharashtra", district: "Gondia", missionaries: 16 },
+			"IN-MH-HI": { state: "Maharashtra", district: "Hingoli", missionaries: 13 },
+			"IN-MH-JG": { state: "Maharashtra", district: "Jalgaon", missionaries: 57 },
+			"IN-MH-JN": { state: "Maharashtra", district: "Jalna", missionaries: 16 },
+			"IN-MH-KO": { state: "Maharashtra", district: "Kolhapur", missionaries: 45 },
+			"IN-MH-LA": { state: "Maharashtra", district: "Latur", missionaries: 22 },
+			"IN-MH-MC": { state: "Maharashtra", district: "Mumbai City", missionaries: 44 },
+			"IN-MH-MU": { state: "Maharashtra", district: "Mumbai suburban", missionaries: 110 },
+			"IN-MH-NG": { state: "Maharashtra", district: "Nagpur", missionaries: 57 },
+			"IN-MH-ND": { state: "Maharashtra", district: "Nanded", missionaries: 46 },
+			"IN-MH-NB": { state: "Maharashtra", district: "Nandurbar", missionaries: 24 },
+			"IN-MH-NS": { state: "Maharashtra", district: "Nashik", missionaries: 72 },
+			"IN-MH-OS": { state: "Maharashtra", district: "Osmanabad", missionaries: 20 },
+			"IN-MH-PL": { state: "Maharashtra", district: "Palghar", missionaries: 35 },
+			"IN-MH-PA": { state: "Maharashtra", district: "Parbhani", missionaries: 19 },
+			"IN-MH-PU": { state: "Maharashtra", district: "Pune", missionaries: 108 },
+			"IN-MH-RG": { state: "Maharashtra", district: "Raigarh", missionaries: 32 },
+			"IN-MH-RT": { state: "Maharashtra", district: "Ratnagiri", missionaries: 23 },
+			"IN-MH-SN": { state: "Maharashtra", district: "Sangli", missionaries: 31 },
+			"IN-MH-ST": { state: "Maharashtra", district: "Satara", missionaries: 38 },
+			"IN-MH-SI": { state: "Maharashtra", district: "Sindhudurg", missionaries: 12 },
+			"IN-MH-SO": { state: "Maharashtra", district: "Solapur", missionaries: 50 },
+			"IN-MH-TH": { state: "Maharashtra", district: "Thane", missionaries: 95 },
+			"IN-MH-WR": { state: "Maharashtra", district: "Wardha", missionaries: 14 },
+			"IN-MH-WS": { state: "Maharashtra", district: "Washim", missionaries: 11 },
+			"IN-MH-YA": { state: "Maharashtra", district: "Yavatmal", missionaries: 33 },
+			"IN-MN-BI": { state: "Manipur", district: "Bishnupur", missionaries: 3 },
+			"IN-MN-WI": { state: "Manipur", district: "Imphal West", missionaries: 9 },
+			"IN-MN-TH": { state: "Manipur", district: "Thoubal", missionaries: 7 },
+			"IN-ML-WG": { state: "Meghalaya", district: "Garo Hills West", missionaries: 9 },
+			"IN-ML-EK": { state: "Meghalaya", district: "Khasi Hills East", missionaries: 3 },
+			"IN-MZ-LA": { state: "Mizoram", district: "Lawngtlai", missionaries: 2 },
+			"IN-OR-AN": { state: "Odisha", district: "Angul", missionaries: 10 },
+			"IN-OR-BL": { state: "Odisha", district: "Balangir", missionaries: 21 },
+			"IN-OR-BW": { state: "Odisha", district: "Balasore", missionaries: 29 },
+			"IN-OR-BR": { state: "Odisha", district: "Bargarh (Baragarh)", missionaries: 17 },
+			"IN-OR-BH": { state: "Odisha", district: "Bhadrak", missionaries: 18 },
+			"IN-OR-BD": { state: "Odisha", district: "Boudh (Bauda)", missionaries: 3 },
+			"IN-OR-CU": { state: "Odisha", district: "Cuttack", missionaries: 38 },
+			"IN-OR-DE": { state: "Odisha", district: "Debagarh (Deogarh)", missionaries: 7 },
+			"IN-OR-DH": { state: "Odisha", district: "Dhenkanal", missionaries: 13 },
+			"IN-OR-GP": { state: "Odisha", district: "Gajapati", missionaries: 7 },
+			"IN-OR-GN": { state: "Odisha", district: "Ganjam", missionaries: 42 },
+			"IN-OR-JS": { state: "Odisha", district: "Jagatsinghpur", missionaries: 9 },
+			"IN-OR-JP": { state: "Odisha", district: "Jajpur", missionaries: 25 },
+			"IN-OR-JH": { state: "Odisha", district: "Jharsuguda", missionaries: 9 },
+			"IN-OR-KL": { state: "Odisha", district: "Kalahandi", missionaries: 22 },
+			"IN-OR-KP": { state: "Odisha", district: "Kendrapara", missionaries: 15 },
+			"IN-OR-KJ": { state: "Odisha", district: "Kendujhar (Keonjhar)", missionaries: 21 },
+			"IN-OR-KH": { state: "Odisha", district: "Khordha", missionaries: 17 },
+			"IN-OR-KO": { state: "Odisha", district: "Koraput", missionaries: 23 },
+			"IN-OR-ML": { state: "Odisha", district: "Malkangiri", missionaries: 8 },
+			"IN-OR-MY": { state: "Odisha", district: "Mayurbhanj", missionaries: 27 },
+			"IN-OR-NB": { state: "Odisha", district: "Nabarangpur", missionaries: 15 },
+			"IN-OR-NY": { state: "Odisha", district: "Nayagarh", missionaries: 24 },
+			"IN-OR-NU": { state: "Odisha", district: "Nuapada", missionaries: 10 },
+			"IN-OR-PU": { state: "Odisha", district: "Puri", missionaries: 18 },
+			"IN-OR-RA": { state: "Odisha", district: "Rayagada", missionaries: 8 },
+			"IN-OR-SA": { state: "Odisha", district: "Sambalpur", missionaries: 7 },
+			"IN-OR-SO": { state: "Odisha", district: "Subarnapur (Sonepur)", missionaries: 12 },
+			"IN-OR-SU": { state: "Odisha", district: "Sundargarh", missionaries: 24 },
+			"IN-PY-KA": { state: "Puducherry", district: "Karaikal", missionaries: 8 },
+			"IN-PY-MA": { state: "Puducherry", district: "Mahe", missionaries: 7 },
+			"IN-PY-PO": { state: "Puducherry", district: "Pondicherry", missionaries: 9 },
+			"IN-PY-YA": { state: "Puducherry", district: "Yanam", missionaries: 2 },
+			"IN-PB-AM": { state: "Punjab", district: "Amritsar", missionaries: 32 },
+			"IN-PB-BA": { state: "Punjab", district: "Bathinda", missionaries: 16 },
+			"IN-PB-FR": { state: "Punjab", district: "Faridkot", missionaries: 7 },
+			"IN-PB-FT": { state: "Punjab", district: "Fatehgarh Sahib", missionaries: 7 },
+			"IN-PB-FA": { state: "Punjab", district: "Fazilka", missionaries: 9 },
+			"IN-PB-FI": { state: "Punjab", district: "Firozpur", missionaries: 33 },
+			"IN-PB-GU": { state: "Punjab", district: "Gurdaspur", missionaries: 19 },
+			"IN-PB-HO": { state: "Punjab", district: "Hoshiarpur", missionaries: 24 },
+			"IN-PB-JA": { state: "Punjab", district: "Jalandhar", missionaries: 24 },
+			"IN-PB-KA": { state: "Punjab", district: "Kapurthala", missionaries: 8 },
+			"IN-PB-LU": { state: "Punjab", district: "Ludhiana", missionaries: 39 },
+			"IN-PB-MA": { state: "Punjab", district: "Mansa", missionaries: 1 },
+			"IN-PB-MO": { state: "Punjab", district: "Moga", missionaries: 3 },
+			"IN-PB-PK": { state: "Punjab", district: "Pathankot", missionaries: 8 },
+			"IN-PB-PA": { state: "Punjab", district: "Patiala", missionaries: 24 },
+			"IN-PB-RU": { state: "Punjab", district: "Rupnagar", missionaries: 7 },
+			"IN-PB-SAS": { state: "Punjab", district: "Sahibzada Ajit Singh Nagar", missionaries: 11 },
+			"IN-PB-SA": { state: "Punjab", district: "Sangrur", missionaries: 18 },
+			"IN-PB-PB": { state: "Punjab", district: "Shahid Bhagat Singh Nagar", missionaries: 4 },
+			"IN-PB-MU": { state: "Punjab", district: "Sri Muktsar Sahib", missionaries: 20 },
+			"IN-PB-TT": { state: "Punjab", district: "Tarn Taran", missionaries: 13 },
+			"IN-RJ-AJ": { state: "Rajasthan", district: "Ajmer", missionaries: 30 },
+			"IN-RJ-AL": { state: "Rajasthan", district: "Alwar", missionaries: 28 },
+			"IN-RJ-BN": { state: "Rajasthan", district: "Banswara", missionaries: 16 },
+			"IN-RJ-BM": { state: "Rajasthan", district: "Barmer", missionaries: 9 },
+			"IN-RJ-BP": { state: "Rajasthan", district: "Bharatpur", missionaries: 20 },
+			"IN-RJ-BI": { state: "Rajasthan", district: "Bikaner", missionaries: 14 },
+			"IN-RJ-BU": { state: "Rajasthan", district: "Bundi", missionaries: 14 },
+			"IN-RJ-CT": { state: "Rajasthan", district: "Chittorgarh", missionaries: 20 },
+			"IN-RJ-CR": { state: "Rajasthan", district: "Churu", missionaries: 60 },
+			"IN-RJ-DU": { state: "Rajasthan", district: "Dungapur", missionaries: 16 },
+			"IN-RJ-GA": { state: "Rajasthan", district: "Ganganagar", missionaries: 50 },
+			"IN-RJ-JP": { state: "Rajasthan", district: "Jaipur", missionaries: 32 },
+			"IN-RJ-JS": { state: "Rajasthan", district: "Jaisalmer", missionaries: 13 },
+			"IN-RJ-JL": { state: "Rajasthan", district: "Jalore", missionaries: 28 },
+			"IN-RJ-JW": { state: "Rajasthan", district: "Jhalawar", missionaries: 15 },
+			"IN-RJ-JJ": { state: "Rajasthan", district: "Jhunjhunu", missionaries: 11 },
+			"IN-RJ-KA": { state: "Rajasthan", district: "Karauli", missionaries: 7 },
+			"IN-RJ-KO": { state: "Rajasthan", district: "Kota", missionaries: 35 },
+			"IN-RJ-NA": { state: "Rajasthan", district: "Nagaur", missionaries: 12 },
+			"IN-RJ-PA": { state: "Rajasthan", district: "Pali", missionaries: 23 },
+			"IN-RJ-PG": { state: "Rajasthan", district: "Pratapgarh", missionaries: 16 },
+			"IN-RJ-RA": { state: "Rajasthan", district: "Rajsamand", missionaries: 19 },
+			"IN-RJ-SR": { state: "Rajasthan", district: "Sirohi", missionaries: 15 },
+			"IN-RJ-TO": { state: "Rajasthan", district: "Tonk", missionaries: 16 },
+			"IN-RJ-UD": { state: "Rajasthan", district: "Udaipur", missionaries: 30 },
+			"IN-SK-ES": { state: "Sikkim", district: "Sikkim East", missionaries: 2 },
+			"IN-SK-NS": { state: "Sikkim", district: "Sikkim North", missionaries: 2 },
+			"IN-TN-AY": { state: "Tamil Nadu", district: "Ariyalur", missionaries: 10 },
+			"IN-TN-CH": { state: "Tamil Nadu", district: "Chennai", missionaries: 64 },
+			"IN-TN-CO": { state: "Tamil Nadu", district: "Coimbatore", missionaries: 40 },
+			"IN-TN-DH": { state: "Tamil Nadu", district: "Dharmapuri", missionaries: 25 },
+			"IN-TN-DI": { state: "Tamil Nadu", district: "Dindigul", missionaries: 20 },
+			"IN-TN-ER": { state: "Tamil Nadu", district: "Erode", missionaries: 30 },
+			"IN-TN-KK": { state: "Tamil Nadu", district: "Kanyakumari", missionaries: 21 },
+			"IN-TN-KA": { state: "Tamil Nadu", district: "Karur", missionaries: 23 },
+			"IN-TN-KR": { state: "Tamil Nadu", district: "Krishnagiri", missionaries: 19 },
+			"IN-TN-MA": { state: "Tamil Nadu", district: "Madurai", missionaries: 35 },
+			"IN-TN-NG": { state: "Tamil Nadu", district: "Nagapattinam", missionaries: 18 },
+			"IN-TN-NM": { state: "Tamil Nadu", district: "Namakkal", missionaries: 16 },
+			"IN-TN-NI": { state: "Tamil Nadu", district: "Nilgiris", missionaries: 8 },
+			"IN-TN-PU": { state: "Tamil Nadu", district: "Pudukkottai", missionaries: 16 },
+			"IN-TN-RA": { state: "Tamil Nadu", district: "Ramanathapuram", missionaries: 19 },
+			"IN-TN-SA": { state: "Tamil Nadu", district: "Salem", missionaries: 38 },
+			"IN-TN-SI": { state: "Tamil Nadu", district: "Sivaganga", missionaries: 3 },
+			"IN-TN-TJ": { state: "Tamil Nadu", district: "Thanjavur", missionaries: 7 },
+			"IN-TN-TH": { state: "Tamil Nadu", district: "Theni", missionaries: 23 },
+			"IN-TN-TK": { state: "Tamil Nadu", district: "Thoothukudi", missionaries: 21 },
+			"IN-TN-TC": { state: "Tamil Nadu", district: "Tiruchirappalli", missionaries: 36 },
+			"IN-TN-TP": { state: "Tamil Nadu", district: "Tirupur", missionaries: 30 },
+			"IN-TN-TL": { state: "Tamil Nadu", district: "Tiruvallur", missionaries: 37 },
+			"IN-TN-TV": { state: "Tamil Nadu", district: "Tiruvannamalai", missionaries: 29 },
+			"IN-TN-VE": { state: "Tamil Nadu", district: "Vellore", missionaries: 16 },
+			"IN-TN-VR": { state: "Tamil Nadu", district: "Virudhunagar", missionaries: 23 },
+			"IN-TG-AD": { state: "Telangana", district: "Adilabad", missionaries: 9 },
+			"IN-TG-HY": { state: "Telangana", district: "Hyderabad", missionaries: 42 },
+			"IN-TG-KA": { state: "Telangana", district: "Karimnagar", missionaries: 12 },
+			"IN-TG-KH": { state: "Telangana", district: "Khammam", missionaries: 17 },
+			"IN-TG-MA": { state: "Telangana", district: "Mahbubnagar", missionaries: 20 },
+			"IN-TG-ME": { state: "Telangana", district: "Medak", missionaries: 35 },
+			"IN-TG-NA": { state: "Telangana", district: "Nalgonda", missionaries: 46 },
+			"IN-TG-NI": { state: "Telangana", district: "Nizamabad", missionaries: 19 },
+			"IN-TG-RA": { state: "Telangana", district: "Ranga Reddy", missionaries: 40 },
+			"IN-TR-DH": { state: "Tripura", district: "Dhalai", missionaries: 4 },
+			"IN-TR-KH": { state: "Tripura", district: "Khowai", missionaries: 22 },
+			"IN-TR-ST": { state: "Tripura", district: "Tripura South", missionaries: 7 },
+			"IN-TR-WT": { state: "Tripura", district: "Tripura West", missionaries: 9 },
+			"IN-UP-AG": { state: "Uttar Pradesh", district: "Agra", missionaries: 60 },
+			"IN-UP-AL": { state: "Uttar Pradesh", district: "Aligarh", missionaries: 51 },
+			"IN-UP-AH": { state: "Uttar Pradesh", district: "Allahabad", missionaries: 85 },
+			"IN-UP-AN": { state: "Uttar Pradesh", district: "Ambedkar Nagar", missionaries: 32 },
+			"IN-UP-CS": { state: "Uttar Pradesh", district: "Amethi", missionaries: 29 },
+			"IN-UP-JP": { state: "Uttar Pradesh", district: "Amroha (Jyotiba Phule Nagar)", missionaries: 37 },
+			"IN-UP-AU": { state: "Uttar Pradesh", district: "Auraiya", missionaries: 28 },
+			"IN-UP-AZ": { state: "Uttar Pradesh", district: "Azamgarh", missionaries: 67 },
+			"IN-UP-BG": { state: "Uttar Pradesh", district: "Bagpat", missionaries: 26 },
+			"IN-UP-BH": { state: "Uttar Pradesh", district: "Bahraich", missionaries: 36 },
+			"IN-UP-BL": { state: "Uttar Pradesh", district: "Ballia", missionaries: 32 },
+			"IN-UP-BP": { state: "Uttar Pradesh", district: "Balrampur", missionaries: 28 },
+			"IN-UP-BN": { state: "Uttar Pradesh", district: "Banda", missionaries: 35 },
+			"IN-UP-BB": { state: "Uttar Pradesh", district: "Barabanki", missionaries: 41 },
+			"IN-UP-BR": { state: "Uttar Pradesh", district: "Bareilly", missionaries: 54 },
+			"IN-UP-BS": { state: "Uttar Pradesh", district: "Basti", missionaries: 28 },
+			"IN-UP-BI": { state: "Uttar Pradesh", district: "Bijnor", missionaries: 46 },
+			"IN-UP-BD": { state: "Uttar Pradesh", district: "Budaun", missionaries: 44 },
+			"IN-UP-BU": { state: "Uttar Pradesh", district: "Bulandshahr", missionaries: 49 },
+			"IN-UP-CD": { state: "Uttar Pradesh", district: "Chandauli", missionaries: 29 },
+			"IN-UP-CT": { state: "Uttar Pradesh", district: "Chitrakoot", missionaries: 6 },
+			"IN-UP-DE": { state: "Uttar Pradesh", district: "Deoria", missionaries: 43 },
+			"IN-UP-ET": { state: "Uttar Pradesh", district: "Etah", missionaries: 26 },
+			"IN-UP-EW": { state: "Uttar Pradesh", district: "Etawah", missionaries: 14 },
+			"IN-UP-FZ": { state: "Uttar Pradesh", district: "Faizabad", missionaries: 35 },
+			"IN-UP-FR": { state: "Uttar Pradesh", district: "Farrukhabad", missionaries: 31 },
+			"IN-UP-FT": { state: "Uttar Pradesh", district: "Fatehpur", missionaries: 38 },
+			"IN-UP-FI": { state: "Uttar Pradesh", district: "Firozabad", missionaries: 33 },
+			"IN-UP-GB": { state: "Uttar Pradesh", district: "Gautam Buddh Nagar", missionaries: 23 },
+			"IN-UP-GZ": { state: "Uttar Pradesh", district: "Ghaziabad", missionaries: 22 },
+			"IN-UP-GP": { state: "Uttar Pradesh", district: "Ghazipur", missionaries: 51 },
+			"IN-UP-GN": { state: "Uttar Pradesh", district: "Gonda", missionaries: 48 },
+			"IN-UP-GR": { state: "Uttar Pradesh", district: "Gorakhpur", missionaries: 63 },
+			"IN-UP-HM": { state: "Uttar Pradesh", district: "Hamirpur", missionaries: 4 },
+			"IN-UP-HR": { state: "Uttar Pradesh", district: "Hardoi", missionaries: 59 },
+			"IN-UP-HT": { state: "Uttar Pradesh", district: "Hathras (Mahamaya Nagar)", missionaries: 20 },
+			"IN-UP-JL": { state: "Uttar Pradesh", district: "Jalaun", missionaries: 29 },
+			"IN-UP-JU": { state: "Uttar Pradesh", district: "Jaunpur", missionaries: 68 },
+			"IN-UP-JH": { state: "Uttar Pradesh", district: "Jhansi", missionaries: 18 },
+			"IN-UP-KJ": { state: "Uttar Pradesh", district: "Kannauj", missionaries: 19 },
+			"IN-UP-KD": { state: "Uttar Pradesh", district: "Kanpur Dehat (Ramabai Nagar)", missionaries: 27 },
+			"IN-UP-KN": { state: "Uttar Pradesh", district: "Kanpur Nagar", missionaries: 61 },
+			"IN-UP-KR": { state: "Uttar Pradesh", district: "Kasganj (Kanshi Ram Nagar)", missionaries: 22 },
+			"IN-UP-KS": { state: "Uttar Pradesh", district: "Kaushambi", missionaries: 18 },
+			"IN-UP-KU": { state: "Uttar Pradesh", district: "Kushinagar", missionaries: 42 },
+			"IN-UP-LK": { state: "Uttar Pradesh", district: "Lakhimpur Kheri", missionaries: 55 },
+			"IN-UP-LA": { state: "Uttar Pradesh", district: "Lalitpur", missionaries: 18 },
+			"IN-UP-LU": { state: "Uttar Pradesh", district: "Lucknow", missionaries: 72 },
+			"IN-UP-MG": { state: "Uttar Pradesh", district: "Maharajganj", missionaries: 40 },
+			"IN-UP-MH": { state: "Uttar Pradesh", district: "Mahoba", missionaries: 17 },
+			"IN-UP-MP": { state: "Uttar Pradesh", district: "Mainpuri", missionaries: 29 },
+			"IN-UP-MT": { state: "Uttar Pradesh", district: "Mathura", missionaries: 38 },
+			"IN-UP-MB": { state: "Uttar Pradesh", district: "Mau", missionaries: 39 },
+			"IN-UP-ME": { state: "Uttar Pradesh", district: "Meerut", missionaries: 54 },
+			"IN-UP-MI": { state: "Uttar Pradesh", district: "Mirzapur", missionaries: 31 },
+			"IN-UP-MO": { state: "Uttar Pradesh", district: "Moradabad", missionaries: 32 },
+			"IN-UP-MU": { state: "Uttar Pradesh", district: "Muzaffarnagar", missionaries: 40 },
+			"IN-UP-PI": { state: "Uttar Pradesh", district: "Pilibhit", missionaries: 27 },
+			"IN-UP-PR": { state: "Uttar Pradesh", district: "Pratapgarh", missionaries: 41 },
+			"IN-UP-RB": { state: "Uttar Pradesh", district: "Raebareli", missionaries: 34 },
+			"IN-UP-RA": { state: "Uttar Pradesh", district: "Rampur", missionaries: 21 },
+			"IN-UP-SA": { state: "Uttar Pradesh", district: "Saharanpur", missionaries: 42 },
+			"IN-UP-SM": { state: "Uttar Pradesh", district: "Sambhal", missionaries: 27 },
+			"IN-UP-SK": { state: "Uttar Pradesh", district: "Sant Kabir Nagar", missionaries: 19 },
+			"IN-UP-SJ": { state: "Uttar Pradesh", district: "Shahjahanpur", missionaries: 45 },
+			"IN-UP-SH": { state: "Uttar Pradesh", district: "Shamli", missionaries: 14 },
+			"IN-UP-SV": { state: "Uttar Pradesh", district: "Shravasti", missionaries: 24 },
+			"IN-UP-SN": { state: "Uttar Pradesh", district: "Siddharthnagar", missionaries: 45 },
+			"IN-UP-SI": { state: "Uttar Pradesh", district: "Sitapur", missionaries: 63 },
+			"IN-UP-SO": { state: "Uttar Pradesh", district: "Sonbhadra", missionaries: 24 },
+			"IN-UP-SU": { state: "Uttar Pradesh", district: "Sultanpur", missionaries: 43 },
+			"IN-UP-UN": { state: "Uttar Pradesh", district: "Unnao", missionaries: 45 },
+			"IN-UP-VA": { state: "Uttar Pradesh", district: "Varanasi", missionaries: 67 },
+			"IN-UT-AL": { state: "Uttarakhand", district: "Almora", missionaries: 16 },
+			"IN-UT-CL": { state: "Uttarakhand", district: "Chamoli", missionaries: 14 },
+			"IN-UT-CP": { state: "Uttarakhand", district: "Champawat", missionaries: 3 },
+			"IN-UT-DD": { state: "Uttarakhand", district: "Dehradun", missionaries: 20 },
+			"IN-UT-HA": { state: "Uttarakhand", district: "Haridwar", missionaries: 21 },
+			"IN-UT-NA": { state: "Uttarakhand", district: "Nainital", missionaries: 14 },
+			"IN-UT-PG": { state: "Uttarakhand", district: "Pauri Garhwal", missionaries: 5 },
+			"IN-UT-PI": { state: "Uttarakhand", district: "Pithoragarh", missionaries: 8 },
+			"IN-UT-TG": { state: "Uttarakhand", district: "Tehri Garhwal", missionaries: 15 },
+			"IN-UT-US": { state: "Uttarakhand", district: "Udham Singh Nagar", missionaries: 23 },
+			"IN-UT-UT": { state: "Uttarakhand", district: "Uttarkashi", missionaries: 4 },
+			"IN-WB-AD": { state: "West Bengal", district: "Alipurduar", missionaries: 18 },
+			"IN-WB-BN": { state: "West Bengal", district: "Bankura", missionaries: 45 },
+			"IN-WB-BI": { state: "West Bengal", district: "Birbhum", missionaries: 49 },
+			"IN-WB-KB": { state: "West Bengal", district: "Cooch Behar", missionaries: 30 },
+			"IN-WB-DD": { state: "West Bengal", district: "Dakshin Dinajpur", missionaries: 36 },
+			"IN-WB-DA": { state: "West Bengal", district: "Darjeeling", missionaries: 17 },
+			"IN-WB-HG": { state: "West Bengal", district: "Hooghly", missionaries: 77 },
+			"IN-WB-HR": { state: "West Bengal", district: "Howrah", missionaries: 55 },
+			"IN-WB-JA": { state: "West Bengal", district: "Jalpaiguri", missionaries: 33 },
+			"IN-WB-KO": { state: "West Bengal", district: "Kolkata", missionaries: 58 },
+			"IN-WB-MA": { state: "West Bengal", district: "Maldah", missionaries: 46 },
+			"IN-WB-MSD": { state: "West Bengal", district: "Murshidabad", missionaries: 87 },
+			"IN-WB-NA": { state: "West Bengal", district: "Nadia", missionaries: 60 },
+			"IN-WB-PN": { state: "West Bengal", district: "North 24 Parganas", missionaries: 108 },
+			"IN-WB-BR": { state: "West Bengal", district: "Paschim Bardhaman", missionaries: 64 },
+			"IN-WB-PM": { state: "West Bengal", district: "Paschim Medinipur", missionaries: 74 },
+			"IN-WB-PR": { state: "West Bengal", district: "Purba Medinipur", missionaries: 71 },
+			"IN-WB-PU": { state: "West Bengal", district: "Purulia", missionaries: 34 },
+			"IN-WB-PS": { state: "West Bengal", district: "South 24 Parganas", missionaries: 116 }
+		};
+    </script>
+
+    <!-- 📥 Copy the unaccountedMissionaries output here -->
+    <script>
+    // ===== unaccountedMissionaries from Python script =====
+    var unaccountedMissionaries = [
+		{ state: "Andhra Pradesh", district: "Alluri Sitharama Raju", missionaries: 10 },
+		{ state: "Andhra Pradesh", district: "Bapatla", missionaries: 3 },
+		{ state: "Andhra Pradesh", district: "Eluru", missionaries: 35 },
+		{ state: "Andhra Pradesh", district: "Kakinada", missionaries: 26 },
+		{ state: "Andhra Pradesh", district: "Konaseema", missionaries: 16 },
+		{ state: "Andhra Pradesh", district: "NTR (Nandamuri Taraka Rama Rao)", missionaries: 41 },
+		{ state: "Andhra Pradesh", district: "Nandyal", missionaries: 52 },
+		{ state: "Andhra Pradesh", district: "Palnadu", missionaries: 65 },
+		{ state: "Andhra Pradesh", district: "Sri Sathya Sai", missionaries: 26 },
+		{ state: "Andhra Pradesh", district: "Tirupati", missionaries: 74 },
+		{ state: "Arunachal Pradesh", district: "Shi-Yomi", missionaries: 1 },
+		{ state: "Assam", district: "Bajali", missionaries: 10 },
+		{ state: "Chhattisgarh", district: "Manendragarh-Chirmiri-Bharatpur", missionaries: 10 },
+		{ state: "Haryana", district: "Charkhi Dadri", missionaries: 13 },
+		{ state: "Karnataka", district: "Vijayanagara", missionaries: 29 },
+		{ state: "Ladakh", district: "Kargil", missionaries: 2 },
+		{ state: "Ladakh", district: "Ladakh (Leh)", missionaries: 2 },
+		{ state: "Madhya Pradesh", district: "Nagda", missionaries: 19 },
+		{ state: "Punjab", district: "Malerkotla", missionaries: 14 },
+		{ state: "Rajasthan", district: "Anupgarh", missionaries: 20 },
+		{ state: "Rajasthan", district: "Deeg", missionaries: 17 },
+		{ state: "Rajasthan", district: "Gangapur City", missionaries: 20 },
+		{ state: "Rajasthan", district: "Jaipur Rural", missionaries: 92 },
+		{ state: "Rajasthan", district: "Phalodi", missionaries: 125 },
+		{ state: "Rajasthan", district: "Shahpura", missionaries: 37 },
+		{ state: "Tamil Nadu", district: "Chengalpattu", missionaries: 53 },
+		{ state: "Tamil Nadu", district: "Kallakkurchi", missionaries: 16 },
+		{ state: "Tamil Nadu", district: "Mayiladuthurai", missionaries: 55 },
+		{ state: "Tamil Nadu", district: "Ranipet", missionaries: 65 },
+		{ state: "Tamil Nadu", district: "Tenkasi", missionaries: 32 },
+		{ state: "Telangana", district: "Jangaon", missionaries: 32 },
+		{ state: "Telangana", district: "Jayashankar-Bhupalpalli", missionaries: 1 },
+		{ state: "Telangana", district: "Kamareddy", missionaries: 14 },
+		{ state: "Telangana", district: "Komaram Bheem Asifabad", missionaries: 11 },
+		{ state: "Telangana", district: "Mahabubabad", missionaries: 20 },
+		{ state: "Telangana", district: "Medchal Malkajgiri", missionaries: 27 },
+		{ state: "Telangana", district: "Narayanpet", missionaries: 5 },
+		{ state: "Telangana", district: "Nirmal", missionaries: 13 },
+		{ state: "Telangana", district: "Peddapalli", missionaries: 20 },
+		{ state: "Telangana", district: "Vikarabad", missionaries: 2 },
+		{ state: "Telangana", district: "Wanaparthy", missionaries: 11 },
+		{ state: "West Bengal", district: "Jhargram", missionaries: 5 },
+		{ state: "West Bengal", district: "Kalimpang", missionaries: 4 },
+		{ state: "West Bengal", district: "Purba Bardhaman", missionaries: 40 }
+	];
+    </script>
+
+
+    <div id="unaccountedSection">
+        <h3>Unaccounted Missionaries</h3>
+        <div id="unaccountedTableContainer">
+            <table id="unaccountedTable">
+                <thead>
+                    <tr>
+                        <th>State</th>
+                        <th>District</th>
+                        <th>Missionaries</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Populated dynamically -->
+                </tbody>
+            </table>
+        </div>
+        <p><b>Total Unaccounted Missionaries:</b> <span id="unaccountedTotal"></span></p>
+    </div>
+    <script>
+        var map;
+
+        function buildMap() {
+            var areas = [];
+
+            const minMissionaries = 1;
+            const maxMissionaries = 168;
+
+            if (AmCharts.maps.indiaDistrictsLow2 && AmCharts.maps.indiaDistrictsLow2.svg && AmCharts.maps.indiaDistrictsLow2.svg.g && AmCharts.maps.indiaDistrictsLow2.svg.g.path) {
+                var mapPaths = AmCharts.maps.indiaDistrictsLow2.svg.g.path;
+
+                for (var i = 0; i < mapPaths.length; i++) {
+                    var areaId = mapPaths[i].id;
+                    if (areaId) {
+                        if (missionaryData[areaId]) {
+                            let missionaryCount = missionaryData[areaId].missionaries;
+                            let normalized = (missionaryCount - minMissionaries) / (maxMissionaries - minMissionaries);
+                            normalized = Math.max(0, Math.min(1, normalized));
+
+                            const red = 255;
+                            const greenBlue = Math.floor(220 - normalized * 220);
+                            const color = `rgb(${red},${greenBlue},${greenBlue})`;
+
+                            areas.push({
+                                id: areaId,
+                                title: missionaryData[areaId].state + " - " + missionaryData[areaId].district,
+                                value: missionaryCount,
+                                color: color
+                            });
+                        } else {
+                            areas.push({
+                                id: areaId,
+                                title: "No Data " + areaId,
+                                value: 0,
+                                color: "#eeeeee"
+                            });
+                        }
+                    }
+                }
+            }
+
+            map = AmCharts.makeChart("mapdiv", {
+                "type": "map",
+                "theme": "light",
+                "projection": "mercator",
+                "dataProvider": {
+                    "map": "indiaDistrictsLow2",
+                    "areas": areas
+                },
+                "areasSettings": {
+                    "autoZoom": true,
+                    "selectedColor": "#FF9933",
+                    "outlineColor": "#666666",
+                    "rollOverColor": "#FF6600",
+                    "rollOverOutlineColor": "#000000",
+                    "balloonText": "<b>[[title]]</b><br><b>Missionaries:</b> [[value]]"
+                },
+                "export": {
+                    "enabled": true
+                }
+            });
+        }
+
+        function searchDistrict() {
+            var inputId = document.getElementById('searchBox').value.trim().toUpperCase();
+            var area = map.getObjectById(inputId);
+
+            if (area) {
+                map.clickMapObject(area);
+            } else {
+                alert('District ID not found: ' + inputId);
+            }
+        }
+
+        function populateUnaccountedTable() {
+            var tbody = document.getElementById('unaccountedTable').querySelector('tbody');
+            var total = 0;
+
+            for (var i = 0; i < unaccountedMissionaries.length; i++) {
+                var row = unaccountedMissionaries[i];
+                var tr = document.createElement('tr');
+                tr.innerHTML = `<td>${row.state}</td><td>${row.district}</td><td>${row.missionaries}</td>`;
+                tbody.appendChild(tr);
+
+                total += row.missionaries;
+            }
+
+            document.getElementById('unaccountedTotal').textContent = total;
+        }
+
+        // Load everything
+        buildMap();
+        populateUnaccountedTable();
+    </script>
+
+</body>
+</html>
