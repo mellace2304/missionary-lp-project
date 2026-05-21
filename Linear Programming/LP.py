@@ -6,7 +6,7 @@ import time
 def solve_missionary_allocation():
     print("Loading data...")
     # Load the data
-    df = pd.read_csv('ALL_DATA.csv')
+    df = pd.read_csv('..\\Data Scraping\\ALL_DATA.csv')
     
     # Calculate the reach of each missionary
     MISSIONARY_REACH = 10000

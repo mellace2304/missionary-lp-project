@@ -93,7 +93,7 @@ def scrape_table_data(table_url, people_group_name):
 
 def main():
     data_file = 'data.txt'
-    output_file = 'people_groups_data.csv'
+    output_file = 'ALL_DATA.csv'
     
     # Extract URLs from the file
     people_groups = extract_urls_from_file(data_file)
