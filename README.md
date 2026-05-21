@@ -1,4 +1,4 @@
-# Missionary LP Project
+# missionary-lp-project
 
 Optimal allocation of missionaries to unreached people groups in India using Linear Programming 
 
